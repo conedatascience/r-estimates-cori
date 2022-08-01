@@ -1,5 +1,9 @@
 library(dplyr)
 
+system2('git', 'lfs pull origin main')
+
+system2('git', 'pull origin main')
+
 # make sure data are ready ------------------------------------------------
 
 
@@ -21,3 +25,15 @@ while(nccovid::get_county_covid_demographics(demographic = 'age_group', region =
 
 # script estimates R, writes to `output`
 source(here::here('src', 'estimate-r.R'))
+
+
+system2('git', 'add --all')
+
+prettytime <- format(Sys.time(),'%a %b %d, %Y at %I:%M%p')
+
+system2('git', glue::glue('commit -m "auto update at {prettytime}"'))
+
+
+system2('git', 'lfs push origin main')
+
+system2('git', 'push origin main')
