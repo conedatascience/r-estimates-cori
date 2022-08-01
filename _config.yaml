@@ -10,11 +10,11 @@ website_keywords:
 # https://crontab.guru/
 # Use Eastern Standard Times
 # Example Dag runs at 9:30am Daily
-scheduled: yes # needs to run after NCDHHS data is updated
+scheduled: yes # needs to run after NCDHHS data is updated; wednesdays try starting at 4:00pm
 airflow_schedule:
-  hour: '9'
-  minute: '30'
-  week_day: '*'
+  hour: '16'
+  minute: '0'
+  week_day: '3'
 airflow_tags:
 - R
 - Covid-19
