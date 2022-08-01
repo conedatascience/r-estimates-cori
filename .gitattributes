@@ -1,0 +1,45 @@
+# Basic .gitattributes for a R repo.
+
+# LFS storage
+# to use lfs with a project:
+## `git lfs install`
+# to migrate previously tracked files in existing repo to lfs:
+## git rm -rf --cached *.csv *.xlsx *.pptx *.docx *.html *.pdf *.png *.gif *.jpeg *.RData *.rda *.rds data/** data-raw/** output/** docs/**
+## git lfs migrate import --fixup --everything
+# ============ LFS tracking patterns =============
+*.csv filter=lfs diff=lfs merge=lfs -text
+*.xlsx filter=lfs diff=lfs merge=lfs -text
+*.pptx filter=lfs diff=lfs merge=lfs -text
+*.docx filter=lfs diff=lfs merge=lfs -text
+*.html filter=lfs diff=lfs merge=lfs -text
+*.pdf filter=lfs diff=lfs merge=lfs -text
+*.png filter=lfs diff=lfs merge=lfs -text
+*.gif filter=lfs diff=lfs merge=lfs -text
+*.jpeg filter=lfs diff=lfs merge=lfs -text
+*.RData  filter=lfs diff=lfs merge=lfs -text
+*.rda filter=lfs diff=lfs merge=lfs -text
+*.rds filter=lfs diff=lfs merge=lfs -text
+data/** filter=lfs diff=lfs merge=lfs -text
+data-raw/** filter=lfs diff=lfs merge=lfs -text
+output/** filter=lfs diff=lfs merge=lfs -text
+docs/** filter=lfs diff=lfs merge=lfs -text
+
+
+# Source files
+# ============
+*.Rdata binary
+*.RData binary
+*.rda   binary
+*.rdb   binary
+*.rds   binary
+*.Rd    text
+*.Rdx   binary
+*.Rmd	  text
+*.R  	  text
+*.Rproj text
+*.jpg  binary
+*.gif  binary
+*.png  binary
+*.RDA  binary
+*.RDS  binary
+

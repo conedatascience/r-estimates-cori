@@ -1,0 +1,318 @@
+---
+title: "Untitled"
+author: "Enterprise Analytics"
+date: "`r paste0('Last Updated: ', format(Sys.time(), '%d %B, %Y')) `"
+output: 
+  eatemplates::ea_report:
+    analyst: 
+    - "Jennifer Wenner"
+    email: "jennifer.wenner@conehealth.com"
+    draft: true
+    code_folding: "show" # one of "show", "hide", or "none"
+    code_download: FALSE # TRUE to allow the Rmd to be downloaded or FALSE
+#knit: eatemplates::knit_ea_letter
+---
+
+```{r setup, include=FALSE}
+#knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+#knitr::opts_chunk$set(fig.align = 'center')
+library(tidyverse)
+library(kableExtra)
+library(leaflet)
+library(eaverse)
+library(crosstalk)
+## Do Not Remove These-------------------------------------
+# To Turn off Scientific Notation Use this.
+options(scipen = 999)
+# This generates some metainformation which will be used for indexing later
+generate_meta_yaml()
+
+# This cleans up numbers to add decimal places
+knitr::knit_hooks$set(inline = clean_numbers,
+                      dropdown = knit_dropdown,
+                      chunk = ea_hooks)
+#-----------------------------------------------------------
+
+```
+
+# Executive Summary
+
+```{block, summary = TRUE, echo = TRUE}
+The purpose of this section is to give a summary of the ask for the project.
+
+The key takeaways are as follows:
+
+* The first conclusion is this
+* Our second conclusion is this
+
+Our data set, `mtcars` has `r nrow(mtcars)` observations and `r ncol(mtcars)` parameters.
+
+Our True North Metrics...
+
+```
+
+# Introduction
+
+Here we introduce the context of the problem. If you like the figure, you can see it [here](https://www.conehealth.com/app/files/public/9988/Physician-Hands-Home-Banner.jpg).
+
+```{r adding-pictures, out.height=450}
+# This is how you can add a graphic
+knitr::include_graphics("https://www.conehealth.com/app/files/public/9988/Physician-Hands-Home-Banner.jpg")
+```
+
+<!-- Uncomment this if needed (remove '<!--' and '--\>')
+## Requestor Information
+
+|Requestor| Requestor Department|
+|---------|---------------------|
+| Jonathan Smith| Health |
+
+-->
+
+# Data
+
+This is a sentence with `r span_color('important text', cone_light)` in it.
+
+Here we include our data and how we got it. **Note that this is exploratory!** We'll use the following tables
+
+1. ADT 
+1. Shared 
+1. Epic 
+
+::::::{.information}
+Just some notes.
+::::::
+
+## Retrieve Raw Data
+
+Here's our SQL:
+
+```{r init-query}
+q <- "
+SELECT TOP 3000
+  a.ADTEventTypeDSC
+  ,a.ADTEventSubtypeDSC
+  ,a.DepartmentDSC
+  ,b.revenuelocationNM
+  ,a.EventDTS
+  ,c.SexDSC
+  ,a.PatientClassDSC
+  ,a.PatientServiceDSC
+FROM [Epic].[Encounter].[ADT] a
+LEFT JOIN [Epic].[Reference].[Department] b ON a.departmentID = b.departmentID
+LEFT JOIN [Epic].[Patient].[Patient] c ON a.patientID = c.patientID
+WHERE eventdts >= (GETDATE() - 7)
+  AND patientclasscd = 103 --Emergency
+  AND ADTEventTypeDSC IN ('Discharge')
+"
+# Defaults to CBIEDW1 and Prints Query
+# q_template <- generate_template("script.sql")
+dat_raw <- submit_edw_query(q)
+
+```
+
+And here is our *output*. We have `r nrow(dat_raw)` records returned from our query.
+
+```{r query-output}
+kable(dat_raw[1:10,1:4]) %>% 
+  kable_styling()
+
+```
+
+## Data Wrangling
+
+Here's how we manipulate things...
+
+* Convert character to date  
+* Change NA to "Unknown" 
+* Get Day of Week 
+
+
+```{r clean-data}
+clean_data <-
+  dat_raw %>% 
+  mutate(EventDT = as.Date(EventDTS),
+         day_of_week = factor(weekdays(EventDT, abbreviate=TRUE),
+                              levels = c("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")),
+         serv_clean = ifelse(is.na(PatientServiceDSC), "Missing", PatientServiceDSC)) %>% 
+  mutate(revenuelocationNM = case_when(revenuelocationNM == "MOSES CONE MEMORIAL HOSPITAL" ~ "MOSES CONE",
+                                       revenuelocationNM == "CONE HEALTH MEDCENTER HIGH POINT" ~ "MEDCENTER HIGH POINT",
+                                       revenuelocationNM == "WESLEY LONG COMMUNITY HOSPITAL" ~ "WESLEY LONG",
+                                       revenuelocationNM == "ALAMANCE REGIONAL MEDICAL CENTER" ~ "ARMC",
+                                       revenuelocationNM == "ANNIE PENN HOSPITAL" ~ "ANNIE PENN",
+                                       revenuelocationNM == "CONE HEALTH MEDCENTER URGENT CARE KERNERSVILLE" ~ "MEDCENTER KERNERSVILLE",
+                                       revenuelocationNM == "WOMEN'S HOSPITAL OF GREENSBORO" ~ "WOMEN'S HOSPITAL" ,
+                                       TRUE ~ "OTHER"))
+
+summary_data <-
+  clean_data %>% 
+  group_by(revenuelocationNM, day_of_week, SexDSC) %>% 
+  summarise(count_freq = n()) %>% 
+  ungroup()
+
+```
+
+
+# Methodology
+
+Some notes on our methods:
+
+```{block, alert = TRUE, echo = TRUE}
+
+We make a few critical assumptions and here they are:
+
+```
+
+
+# Results Using Tabsets {.tabset .tabset-pills}  
+
+We can also use tabsets to show multiples of our data.
+
+## Static Plot
+
+Notice that the Cone Health color scheme is automatically used.
+
+```{r static-ex, out.width="100%"}
+(p_count_by_day <- 
+  summary_data %>% 
+  ggplot(aes(day_of_week, count_freq, fill=SexDSC))+
+  geom_bar(stat="identity")+
+   theme_cone_facet()+
+  theme(axis.text.x = element_text(angle=90, hjust=1)) +
+  facet_wrap(~ revenuelocationNM, nrow = 3, scales = "free_y") +
+  labs(
+    title ="Discharge Counts by Day of Week",
+    subtitle = "Faceted by Location",
+    y = "Count",
+    x = "Day of Week",
+    caption = "Data: Epic.ADT"
+  ))
+
+```
+
+
+```{r}
+p_count_by_day %>%
+  add_text_logo()
+```
+
+
+## Dynamic Table
+
+```{r summary-out}
+datatable(summary_data)
+```
+
+## Reactive Table
+
+
+```{r summary-out-reative}
+
+shared_summary_data <- SharedData$new(summary_data)
+bscols(
+  widths = c(3, 9),
+  list(
+    filter_checkbox("sex", "Sex", shared_summary_data, ~SexDSC),
+    filter_slider("cnt", "Count", shared_summary_data, ~count_freq, width = "100%"),
+    filter_select("loc", "Location", shared_summary_data, ~revenuelocationNM)
+  ),
+  reactable(shared_summary_data)
+)
+
+
+```
+
+
+## Dynamic Plot
+
+```{r plotly-out, out.width="100%"}
+
+plotly::ggplotly(p_count_by_day)
+```
+
+
+## Dynamic Time Series
+
+```{r ts-graphing, out.width='100%', message=FALSE, warning=FALSE}
+
+library(dygraphs, warn.conflicts = FALSE)
+
+discharges <- 
+  clean_data %>% 
+  filter(revenuelocationNM %in% c("MEDCENTER HIGH POINT", "MOSES CONE", "WESLEY LONG")) %>% 
+  group_by(EventDT, revenuelocationNM) %>% 
+  summarise(count = n()) %>% 
+  pivot_wider(names_from = revenuelocationNM, values_from = count) %>% 
+  ungroup()
+
+
+# Convert to an 'xts' time series object
+ts_dis <- xts::xts(x=discharges[,-1], order.by=discharges$EventDT)
+
+dygraph(ts_dis) %>% 
+  dyRangeSelector()
+
+
+```
+
+
+# Drawing Maps
+
+If we want to draw maps, we can quickly do so with the `leaflet` package.
+
+```{r leaflet-mapping, warning=FALSE, message=FALSE, out.width='80%'}
+
+prettyLeaflet() %>% #sets local view and Cone styling
+  addLayersControl(overlayGroups = c('Show Hospitals'))  %>%
+  addAwesomeMarkers(data = hospitals,  label = ~Hospital,
+                    icon = hospital_icon(),group = "Show Hospitals") %>%
+  addTitleControl('Cone Hospitals', 'Leaflet Map')
+
+```
+
+# Useful References
+
+1. [Rmarkdown Quick Introduction](https://rmarkdown.rstudio.com/lesson-1.html)
+1. [Rmarkdown Book](https://bookdown.org/yihui/rmarkdown/)
+1. [ggplot2 guide](https://ggplot2.tidyverse.org/)
+1. [R cheatsheets](https://rstudio.com/resources/cheatsheets/)
+1. [leaflet](https://rstudio.github.io/leaflet/)
+1. [datatable](https://rstudio.github.io/DT/)
+1. [dygraphs](https://rstudio.github.io/dygraphs/)
+1. [css and html](https://www.w3schools.com/css/)
+1. [font awesome icons](https://fontawesome.com/icons?d=gallery)
+1. [R bookdown advanced](https://bookdown.org/yihui/bookdown/markdown-syntax.html)
+
+## Others
+
+### Two columns with center aligned text
+
+::::::{.column-container}
+
+:::{.twocol .andcenter}
+Hi
+:::
+
+:::{.twocol .andcenter}
+There
+:::
+
+::::::
+
+### Three columns with left aligned text
+
+::::::{.column-container}
+
+:::{.threecol}
+Hi
+:::
+
+:::{.threecol}
+There
+:::
+
+:::{.threecol}
+Again
+:::
+
+::::::
