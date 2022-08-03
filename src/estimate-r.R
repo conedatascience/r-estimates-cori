@@ -124,8 +124,7 @@ for(i in county_target){
                          FUN = function(x)list(mean = round(mean(x)),
                                                sd = round(sd(x)),
                                                q = quantile(x, c(q025 = 0.025,q05 = 0.05,q25 = 0.25,
-                                                                 med = .5,q75 = .75,q95 = 0.95, q975 = 0.975))),
-                         simplify = TRUE)
+                                                                 med = .5,q75 = .75,q95 = 0.95, q975 = 0.975))))
   proj <- lapply(proj, function(x) x %>% unlist() %>% rbind() %>% as_tibble())
   proj <- rbindlist(proj) %>%
     transmute(t_start = NA, t_end = NA, `Mean(R)` = mean, `Std(R)`= sd,
@@ -213,8 +212,7 @@ if(project_incidence){
                          FUN = function(x)list(mean = round(mean(x)),
                                                sd = round(sd(x)),
                                                q = quantile(x, c(q025 = 0.025,q05 = 0.05,q25 = 0.25,
-                                                                 med = .5,q75 = .75,q95 = 0.95, q975 = 0.975))),
-                         simplify = TRUE)
+                                                                 med = .5,q75 = .75,q95 = 0.95, q975 = 0.975))))
   proj <- lapply(proj, function(x) x %>% unlist() %>% rbind() %>% as_tibble())
   proj <- rbindlist(proj) %>%
     transmute(t_start = NA, t_end = NA, `Mean(R)` = mean, `Std(R)`= sd,
@@ -294,8 +292,7 @@ if(project_incidence){
                          FUN = function(x)list(mean = round(mean(x)),
                                                sd = round(sd(x)),
                                                q = quantile(x, c(q025 = 0.025,q05 = 0.05,q25 = 0.25,
-                                                                 med = .5,q75 = .75,q95 = 0.95, q975 = 0.975))),
-                         simplify = TRUE)
+                                                                 med = .5,q75 = .75,q95 = 0.95, q975 = 0.975))))
   proj <- lapply(proj, function(x) x %>% unlist() %>% rbind() %>% as_tibble())
   proj <- rbindlist(proj) %>%
     transmute(t_start = NA, t_end = NA, `Mean(R)` = mean, `Std(R)`= sd,
