@@ -14,8 +14,8 @@ while(nccovid::get_county_covid_demographics(demographic = 'age_group', region =
   i <- i + 1
 
   if(i==1) eadeploy::job_done('NEW R estimate update paused; NCDHHS data not ready.',
-                              to = c('jennifer.wenner@conehealth.com'))
-  break()
+                              to = c('jennifer.wenner@conehealth.com', 'datascience@conehealth.com'))
+  #break()
   Sys.sleep(60*30)
 }
 
